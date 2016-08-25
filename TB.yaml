@@ -1,0 +1,246 @@
+# Example YAML to get you started quickly.
+# Be aware that YAML has indentation based scoping.
+# Code completion support is available so start typing for available options.
+swagger: '2.0'
+
+info:
+  version: "0.0.1"
+  title: Trusted Browser API
+
+paths:
+  /check_tb_required:
+    post:
+      description: Does session need MFA? What kind?
+      parameters:
+        - 
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CheckTbRequired"
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              authContextRequired:
+                type: string
+        401:
+          description: Bad parameters
+  /is_browser_trusted:
+    post:
+      description: Is browser trusted?
+      parameters:
+        -
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/IsBrowserTrusted"
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              result:
+                type: boolean
+                # valid values: TRUE/YES - browser is trusted. FALSE/NO - browser is not trusted
+              reasonCode:
+                type: integer
+              message:
+                type: string
+          400:
+            description: No such principalName
+  /get_questions:
+    post:
+      description: Gets `Questions` object for person. On first call, don't pass a "nonce" field. On subsequent calls, pass back the "nonce" returned by check_answers
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/GetQuestions"
+      # Expected responses for this operation:
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          schema:
+            $ref: "#/definitions/Questions"
+  /check_answers:
+    post:
+      description: Submit responses to questions and get back success/failure.
+      parameters:
+        -
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CheckAnswers"
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              result: 
+                type: boolean
+                # Valid values: TRUE/YES - all responses matched. FALSE/NO - some responses did not match
+              reasonCode:
+                type: integer
+              message:
+                type: string
+              try_again:
+                type: boolean
+                # Valid values: TRUE/YES - caller can request more questions. FALSE/NO - don't ask any more questions, just fail.
+  /check_if_trustable:
+    get:
+      description: Check if browser is trustable.
+      parameters:
+        -
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/IsTrustable"
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: object
+            properties:
+              result:
+                type: boolean
+                # Valid values: TRUE (trustable) FALSE (not trustable)
+              reasonCode:
+                type: integer
+              message:
+                type: string
+        401:
+          description: Bad parameter
+  /set_tb:
+    post:
+      description: Set a browser as trusted
+      parameters:
+        -
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/SetTb"
+      responses:
+        200:
+          description: Successful response
+          schema:
+              title: SetTbResponse
+              type: object
+              properties:
+                cookie_val:
+                  type: string
+                result:
+                  type: string
+                  # Valid values: YES/TRUE - cookie was saved. NO/FALSE - cookie was not saved
+                reasonCode:
+                  type: integer
+                message:
+                  type: string
+        400:
+          description: No such principalName
+definitions:
+  CheckTbRequired:
+    type: object
+    properties:
+      IdPEntityID:
+        type: string
+      SPEntityID:
+        type: string
+      principalName:
+        type: string
+      IPAddress:
+        type: string
+      AuthContext:
+        type: string
+  
+  IsBrowserTrusted:
+    type: object
+    properties:
+      principalName:
+        type: string
+      IdPEntityID:
+        type: string
+      cookieContents:
+        type: string
+  
+  CheckAnswers:
+    type: object
+    properties:
+      principalName: 
+        type: string
+      nonce:
+        type: string
+      ArrayOfAnswers:
+        type: array
+        items:
+          title: Answer
+          type: object
+          properties:
+            id:
+              type: number
+              format: integer
+            response:
+              type: string
+
+  Questions:
+    type: object
+    properties:
+      principal:
+        type: string
+      nonce:
+        type: string
+      ArrayOfQuestions:
+        type: array
+        items:
+          title: Question
+          type: object
+          properties:
+            id:
+              type: number
+              format: integer
+            questionText:
+              type: string
+  GetQuestions:
+    type: object
+    properties:
+      principalName:
+        type: string
+      nonce:
+        type: string
+  IsTrustable:
+    type: object
+    properties:
+      principalName:
+        type: string
+      IdPEntityID:
+        type: string
+      browserString:
+        type: string
+      IPAddress:
+        type: string
+  SetTb:
+    type: object
+    properties:
+      principalName:
+        type: string
+      IdPEntityID:
+        type: string
+      BrowserString:
+        type: string
+      IPAddress:
+        type: string
+      AuthMethod:
+        type: string
+      TB_name:
+        type: string
+        # Name of cookie. Format: wiscEduTrustedBrowser_{printcipalName}
